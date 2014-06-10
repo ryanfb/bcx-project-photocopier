@@ -13,13 +13,14 @@ def api_url(account, path, params = '')
 end
 
 def basecamp_request(account, path, params = '')
+  $stderr.puts api_url(account, path, params)
   uri = URI(api_url(account, path, params))
 
   Net::HTTP.start(uri.host, uri.port,
     :use_ssl => uri.scheme = 'https',
     :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
 
-    request = Net::HTTP::Get.new(uri.request_uri, {'User-Agent' => 'bcx-project-photocopier (ryan.baumann@gmail.com)'})
+    request = Net::HTTP::Get.new(uri.request_uri, {'Content-Type' => 'application/json', 'User-Agent' => 'bcx-project-photocopier (ryan.baumann@gmail.com)'})
     request.basic_auth $config['from_user'], $config['from_pass']
 
     response = http.request request # Net::HTTPResponse object
@@ -55,3 +56,14 @@ documents.each do |document|
   PP.pp document
 end
 
+topics = []
+page = 1
+topics_page = basecamp_request($config['from_account'],"/projects/#{from_project_id}/topics")
+while topics_page.length == 50
+  topics += topics_page
+  page += 1
+  topics_page = basecamp_request($config['from_account'],"/projects/#{from_project_id}/topics","&page=#{page}")
+end
+topics += topics_page
+
+PP.pp topics
