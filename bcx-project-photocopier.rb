@@ -62,7 +62,7 @@ topics_page = basecamp_request($config['from_account'],"/projects/#{from_project
 while topics_page.length == 50
   topics += topics_page
   page += 1
-  topics_page = basecamp_request($config['from_account'],"/projects/#{from_project_id}/topics","&page=#{page}")
+  topics_page = basecamp_request($config['from_account'],"/projects/#{from_project_id}/topics","?page=#{page}")
 end
 topics += topics_page
 
