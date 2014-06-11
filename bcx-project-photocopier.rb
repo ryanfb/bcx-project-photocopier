@@ -30,6 +30,46 @@ def authenticated_request(url)
   end
 end
 
+def authenticated_post(account, path, data)
+  $stderr.puts api_url(account, path)
+
+  uri = URI(api_url(account, path))
+
+  Net::HTTP.start(uri.host, uri.port,
+    :use_ssl => uri.scheme = 'https',
+    :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
+
+    request = Net::HTTP::Post.new(uri.request_uri, {'Content-Type' => 'application/json', 'Content-Length' => data.length.to_s, 'User-Agent' => 'bcx-project-photocopier (ryan.baumann@gmail.com)'})
+    request.basic_auth $config['to_user'], $config['to_pass']
+    request.body = data
+
+    response = http.request request # Net::HTTPResponse object
+    sleep(0.02) # 500 req/10s
+
+    $stderr.puts response.inspect
+    return JSON.parse(response.body)
+  end
+end
+
+def create_attachment(account, project, data, content_type, content_length)
+  uri = URI(api_url(account, "projects/#{project}/attachments"))
+
+  Net::HTTP.start(uri.host, uri.port,
+    :use_ssl => uri.scheme = 'https',
+    :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
+
+    request = Net::HTTP::Post.new(uri.request_uri, {'Content-Type' => content_type, 'Content-Length' => content_length.to_s, 'User-Agent' => 'bcx-project-photocopier (ryan.baumann@gmail.com)'})
+    request.basic_auth $config['to_user'], $config['to_pass']
+    request.body = data
+
+    response = http.request request # Net::HTTPResponse object
+    sleep(0.02) # 500 req/10s
+
+    $stderr.puts response.inspect
+    return JSON.parse(response.body)
+  end
+end
+
 def basecamp_request(account, path, params = '')
   $stderr.puts api_url(account, path, params)
 
@@ -37,7 +77,7 @@ def basecamp_request(account, path, params = '')
 end
 
 from_project_id = ARGV[0]
-# to_project_id = ARGV[1]
+to_project_id = ARGV[1]
 
 from_project = basecamp_request($config['from_account'],"projects/#{from_project_id}")
 PP.pp from_project
@@ -89,6 +129,33 @@ end
 attachments += attachments_page
 
 PP.pp attachments
+
+uploads = attachments.select{ |a| a["attachable"]["type"] == "Upload" }
+puts attachments.length
+puts uploads.length
+
+uploads.each do |upload|
+  upload_data = authenticated_request(upload["url"])
+  attachment = create_attachment($config['to_account'], to_project_id, upload_data, upload["content_type"], upload["byte_size"])
+  PP.pp attachment
+
+  upload_content = basecamp_request($config['from_account'],"projects/#{from_project_id}/uploads/#{upload["attachable"]["id"]}")["content"]
+  new_upload_hash = {
+    "attachments" => [
+      {
+        "token" => attachment["token"],
+        "name" => upload["name"]
+      }
+    ]
+  }
+  unless upload_content.nil?
+    new_upload_hash["content"] = upload_content
+  end
+  PP.pp new_upload_hash
+
+  new_upload = authenticated_post($config['to_account'], "projects/#{to_project_id}/uploads", new_upload_hash.to_json)
+  PP.pp new_upload
+end
 
 accesses = basecamp_request($config['from_account'],"projects/#{from_project_id}/accesses")
 PP.pp accesses
