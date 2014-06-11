@@ -7,6 +7,7 @@ require 'yaml'
 require 'pp'
 
 $config = YAML.load_file('.secrets.yml')
+$dry_run = true
 
 def api_url(account, path, params = '')
   return "https://basecamp.com/#{account}/api/v1/#{path}.json#{params}"
@@ -35,38 +36,44 @@ def authenticated_post(account, path, data)
 
   uri = URI(api_url(account, path))
 
-  Net::HTTP.start(uri.host, uri.port,
-    :use_ssl => uri.scheme = 'https',
-    :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
+  unless $dry_run
+    Net::HTTP.start(uri.host, uri.port,
+      :use_ssl => uri.scheme = 'https',
+      :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
 
-    request = Net::HTTP::Post.new(uri.request_uri, {'Content-Type' => 'application/json', 'Content-Length' => data.length.to_s, 'User-Agent' => 'bcx-project-photocopier (ryan.baumann@gmail.com)'})
-    request.basic_auth $config['to_user'], $config['to_pass']
-    request.body = data
+      request = Net::HTTP::Post.new(uri.request_uri, {'Content-Type' => 'application/json', 'Content-Length' => data.length.to_s, 'User-Agent' => 'bcx-project-photocopier (ryan.baumann@gmail.com)'})
+      request.basic_auth $config['to_user'], $config['to_pass']
+      request.body = data
 
-    response = http.request request # Net::HTTPResponse object
-    sleep(0.02) # 500 req/10s
+      response = http.request request # Net::HTTPResponse object
+      sleep(0.02) # 500 req/10s
 
-    $stderr.puts response.inspect
-    return JSON.parse(response.body)
+      $stderr.puts response.inspect
+      return JSON.parse(response.body)
+    end
   end
 end
 
 def create_attachment(account, project, data, content_type, content_length)
   uri = URI(api_url(account, "projects/#{project}/attachments"))
 
-  Net::HTTP.start(uri.host, uri.port,
-    :use_ssl => uri.scheme = 'https',
-    :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
+  if $dry_run
+    return {"token" => "abcdef1234567890"}
+  else
+    Net::HTTP.start(uri.host, uri.port,
+      :use_ssl => uri.scheme = 'https',
+      :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
 
-    request = Net::HTTP::Post.new(uri.request_uri, {'Content-Type' => content_type, 'Content-Length' => content_length.to_s, 'User-Agent' => 'bcx-project-photocopier (ryan.baumann@gmail.com)'})
-    request.basic_auth $config['to_user'], $config['to_pass']
-    request.body = data
+      request = Net::HTTP::Post.new(uri.request_uri, {'Content-Type' => content_type, 'Content-Length' => content_length.to_s, 'User-Agent' => 'bcx-project-photocopier (ryan.baumann@gmail.com)'})
+      request.basic_auth $config['to_user'], $config['to_pass']
+      request.body = data
 
-    response = http.request request # Net::HTTPResponse object
-    sleep(0.02) # 500 req/10s
+      response = http.request request # Net::HTTPResponse object
+      sleep(0.02) # 500 req/10s
 
-    $stderr.puts response.inspect
-    return JSON.parse(response.body)
+      $stderr.puts response.inspect
+      return JSON.parse(response.body)
+    end
   end
 end
 
