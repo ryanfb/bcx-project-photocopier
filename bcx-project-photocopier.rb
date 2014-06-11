@@ -12,9 +12,8 @@ def api_url(account, path, params = '')
   return "https://basecamp.com/#{account}/api/v1/#{path}.json#{params}"
 end
 
-def basecamp_request(account, path, params = '')
-  $stderr.puts api_url(account, path, params)
-  uri = URI(api_url(account, path, params))
+def authenticated_request(url)
+  uri = URI(url)
 
   Net::HTTP.start(uri.host, uri.port,
     :use_ssl => uri.scheme = 'https',
@@ -27,8 +26,14 @@ def basecamp_request(account, path, params = '')
     sleep(0.02) # 500 req/10s
 
     $stderr.puts response.inspect
-    return JSON.parse(response.body)
+    return response.body
   end
+end
+
+def basecamp_request(account, path, params = '')
+  $stderr.puts api_url(account, path, params)
+
+  return JSON.parse(authenticated_request(api_url(account, path, params)))
 end
 
 from_project_id = ARGV[0]
@@ -68,6 +73,10 @@ end
 topics += topics_page
 
 PP.pp topics
+
+message_topics = topics.select{ |t| t["topicable"]["type"] == "Message" }
+todo_topics = topics.select{ |t| t["topicable"]["type"] == "Todo" }
+
 
 attachments = []
 page = 1
