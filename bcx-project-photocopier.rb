@@ -32,6 +32,7 @@ def basecamp_request(account, path, params = '')
 end
 
 from_project_id = ARGV[0]
+# to_project_id = ARGV[1]
 
 from_project = basecamp_request($config['from_account'],"projects/#{from_project_id}")
 PP.pp from_project
@@ -67,3 +68,18 @@ end
 topics += topics_page
 
 PP.pp topics
+
+attachments = []
+page = 1
+attachments_page = basecamp_request($config['from_account'],"/projects/#{from_project_id}/attachments")
+while attachments_page.length == 50
+  attachments += attachments_page
+  page += 1
+  attachments_page = basecamp_request($config['from_account'],"/projects/#{from_project_id}/attachments","?page=#{page}")
+end
+attachments += attachments_page
+
+PP.pp attachments
+
+accesses = basecamp_request($config['from_account'],"/projects/#{from_project_id}/accesses")
+PP.pp accesses
