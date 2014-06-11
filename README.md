@@ -1,5 +1,16 @@
 ![Photocopier](https://help.github.com/assets/help/fork-a-repo-e50d51c694939c58b2f83c58fc679c4e.gif)
 
+.secrets.yml:
+```
+---
+from_account: 123456
+from_user: bob
+from_pass: str0ng
+to_account: 654321
+to_user: corporatebob
+to_pass: r3ally!str0ng
+```
+
 ```
 from account
 to account
