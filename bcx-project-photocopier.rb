@@ -77,6 +77,29 @@ def create_attachment(account, project, data, content_type, content_length)
   end
 end
 
+def copy_attachment(attachment, to_project_id)
+  attachment_data = authenticated_request(attachment["url"])
+  return create_attachment($config['to_account'], to_project_id, attachment_data, attachment["content_type"], attachment["byte_size"])
+end
+
+def copy_comment(comment, to_project_id, to_path)
+  attachments = comment["attachments"].collect do |attachment|
+    token = copy_attachment(attachment, to_project_id)["token"]
+    {
+      "token" => token,
+      "name" => attachment["name"]
+    }
+  end
+
+  new_comment_hash = {
+    "content" =>  (comment["content"] + "\n\n(copied from original comment by #{comment["creator"]["name"]})"),
+    "attachments" => attachments
+  }
+  PP.pp new_comment_hash
+
+  authenticated_post($config['to_account'], to_path, new_comment_hash.to_json)
+end
+
 def basecamp_request(account, path, params = '')
   $stderr.puts api_url(account, path, params)
 
@@ -88,6 +111,51 @@ to_project_id = ARGV[1]
 
 from_project = basecamp_request($config['from_account'],"projects/#{from_project_id}")
 PP.pp from_project
+
+topics = []
+page = 1
+topics_page = basecamp_request($config['from_account'],"projects/#{from_project_id}/topics")
+while topics_page.length == 50
+  topics += topics_page
+  page += 1
+  topics_page = basecamp_request($config['from_account'],"projects/#{from_project_id}/topics","?page=#{page}")
+end
+topics += topics_page
+
+PP.pp topics
+
+message_topics = topics.select{ |t| t["topicable"]["type"] == "Message" }
+message_topics.each do |message|
+  full_message = basecamp_request($config['from_account'],"projects/#{from_project_id}/messages/#{message["topicable"]["id"]}")
+  PP.pp full_message
+
+  new_message_hash = {
+    "subject" => full_message["subject"],
+    "content" => (full_message["content"] + "\n\n(copied from original message by #{full_message["creator"]["name"]})")
+  }
+  new_message = authenticated_post($config['to_account'], "projects/#{to_project_id}/messages", new_message_hash.to_json)
+  PP.pp new_message
+
+  new_message_id = new_message.nil? ? 1 : new_message["id"]
+
+  full_message["comments"].each do |comment|
+    copy_comment(comment, to_project_id, "projects/#{to_project_id}/messages/#{new_message_id}/comments")
+  end
+end
+
+todo_topics = topics.select{ |t| t["topicable"]["type"] == "Todo" }
+
+attachments = []
+page = 1
+attachments_page = basecamp_request($config['from_account'],"projects/#{from_project_id}/attachments")
+while attachments_page.length == 50
+  attachments += attachments_page
+  page += 1
+  attachments_page = basecamp_request($config['from_account'],"projects/#{from_project_id}/attachments","?page=#{page}")
+end
+attachments += attachments_page
+
+PP.pp attachments
 
 todo_lists = basecamp_request($config['from_account'],"projects/#{from_project_id}/todolists")
 todo_lists += basecamp_request($config['from_account'],"projects/#{from_project_id}/todolists/completed")
@@ -109,41 +177,12 @@ documents.each do |document|
   PP.pp document
 end
 
-topics = []
-page = 1
-topics_page = basecamp_request($config['from_account'],"projects/#{from_project_id}/topics")
-while topics_page.length == 50
-  topics += topics_page
-  page += 1
-  topics_page = basecamp_request($config['from_account'],"projects/#{from_project_id}/topics","?page=#{page}")
-end
-topics += topics_page
-
-PP.pp topics
-
-message_topics = topics.select{ |t| t["topicable"]["type"] == "Message" }
-todo_topics = topics.select{ |t| t["topicable"]["type"] == "Todo" }
-
-
-attachments = []
-page = 1
-attachments_page = basecamp_request($config['from_account'],"projects/#{from_project_id}/attachments")
-while attachments_page.length == 50
-  attachments += attachments_page
-  page += 1
-  attachments_page = basecamp_request($config['from_account'],"projects/#{from_project_id}/attachments","?page=#{page}")
-end
-attachments += attachments_page
-
-PP.pp attachments
-
 uploads = attachments.select{ |a| a["attachable"]["type"] == "Upload" }
 puts attachments.length
 puts uploads.length
 
 uploads.each do |upload|
-  upload_data = authenticated_request(upload["url"])
-  attachment = create_attachment($config['to_account'], to_project_id, upload_data, upload["content_type"], upload["byte_size"])
+  attachment = copy_attachment(upload, to_project_id)
   PP.pp attachment
 
   upload_content = basecamp_request($config['from_account'],"projects/#{from_project_id}/uploads/#{upload["attachable"]["id"]}")["content"]
