@@ -37,12 +37,12 @@ from_project_id = ARGV[0]
 from_project = basecamp_request($config['from_account'],"projects/#{from_project_id}")
 PP.pp from_project
 
-todo_lists = basecamp_request($config['from_account'],"/projects/#{from_project_id}/todolists")
-todo_lists += basecamp_request($config['from_account'],"/projects/#{from_project_id}/todolists/completed")
+todo_lists = basecamp_request($config['from_account'],"projects/#{from_project_id}/todolists")
+todo_lists += basecamp_request($config['from_account'],"projects/#{from_project_id}/todolists/completed")
 PP.pp todo_lists
 
 todo_lists.each do |todo_list|
-  todo_list = basecamp_request($config['from_account'],"/projects/#{from_project_id}/todolists/#{todo_list["id"]}")
+  todo_list = basecamp_request($config['from_account'],"projects/#{from_project_id}/todolists/#{todo_list["id"]}")
   PP.pp todo_list
   %w{remaining completed}.each do |todo_status|
     todo_list["todos"][todo_status].each do |todo|
@@ -51,19 +51,19 @@ todo_lists.each do |todo_list|
   end
 end
 
-documents = basecamp_request($config['from_account'],"/projects/#{from_project_id}/documents")
+documents = basecamp_request($config['from_account'],"projects/#{from_project_id}/documents")
 documents.each do |document|
-  document = basecamp_request($config['from_account'],"/projects/#{from_project_id}/documents/#{document["id"]}")
+  document = basecamp_request($config['from_account'],"projects/#{from_project_id}/documents/#{document["id"]}")
   PP.pp document
 end
 
 topics = []
 page = 1
-topics_page = basecamp_request($config['from_account'],"/projects/#{from_project_id}/topics")
+topics_page = basecamp_request($config['from_account'],"projects/#{from_project_id}/topics")
 while topics_page.length == 50
   topics += topics_page
   page += 1
-  topics_page = basecamp_request($config['from_account'],"/projects/#{from_project_id}/topics","?page=#{page}")
+  topics_page = basecamp_request($config['from_account'],"projects/#{from_project_id}/topics","?page=#{page}")
 end
 topics += topics_page
 
@@ -71,15 +71,15 @@ PP.pp topics
 
 attachments = []
 page = 1
-attachments_page = basecamp_request($config['from_account'],"/projects/#{from_project_id}/attachments")
+attachments_page = basecamp_request($config['from_account'],"projects/#{from_project_id}/attachments")
 while attachments_page.length == 50
   attachments += attachments_page
   page += 1
-  attachments_page = basecamp_request($config['from_account'],"/projects/#{from_project_id}/attachments","?page=#{page}")
+  attachments_page = basecamp_request($config['from_account'],"projects/#{from_project_id}/attachments","?page=#{page}")
 end
 attachments += attachments_page
 
 PP.pp attachments
 
-accesses = basecamp_request($config['from_account'],"/projects/#{from_project_id}/accesses")
+accesses = basecamp_request($config['from_account'],"projects/#{from_project_id}/accesses")
 PP.pp accesses
