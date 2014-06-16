@@ -133,6 +133,18 @@ message_topics.each do |message|
     "subject" => full_message["subject"],
     "content" => (full_message["content"] + "\n\n(copied from original message by #{full_message["creator"]["name"]})")
   }
+
+  if full_message.has_key?("attachments")
+    new_message_hash["attachments"] = full_message["attachments"].collect do |message_attachment|
+      new_attachment_token = copy_attachment(message_attachment, to_project_id)["token"]
+      new_attachment_name = message_attachment["name"]
+      {
+        "token" => new_attachment_token,
+        "name" => new_attachment_name
+      }
+    end
+  end
+
   new_message = authenticated_post($config['to_account'], "projects/#{to_project_id}/messages", new_message_hash.to_json)
   PP.pp new_message
 
