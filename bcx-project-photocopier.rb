@@ -189,6 +189,13 @@ documents = basecamp_request($config['from_account'],"projects/#{from_project_id
 documents.each do |document|
   document = basecamp_request($config['from_account'],"projects/#{from_project_id}/documents/#{document["id"]}")
   PP.pp document
+
+  new_document_hash = {
+    "title" => document["title"],
+    "content" => document["content"]
+  }
+  new_document = authenticated_post($config['to_account'], "projects/#{to_project_id}/documents", new_document_hash.to_json)
+  PP.pp new_document
 end
 
 uploads = attachments.select{ |a| a["attachable"]["type"] == "Upload" }
