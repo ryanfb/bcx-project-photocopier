@@ -13,6 +13,14 @@ to_user: corporatebob
 to_pass: r3ally!str0ng
 ```
 
+Not yet implemented:
+
+ * copying events
+ * copying stars
+ * copying file labels (not even in the API?)
+ * preserving original authorship (would require user/pass for everyone)
+ * copying accesses/subscriptions
+
 Notes:
 ```
 from account
