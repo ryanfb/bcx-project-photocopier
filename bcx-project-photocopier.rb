@@ -54,6 +54,32 @@ def authenticated_post(account, path, data)
   end
 end
 
+def complete_todo(account, project_id, todo_id)
+  $stderr.puts api_url(account, "projects/#{project_id}/todos/#{todo_id}")
+
+  uri = URI(api_url(account, "projects/#{project_id}/todos/#{todo_id}"))
+  data = {
+    "completed" => true
+  }.to_json
+
+  unless $dry_run
+    Net::HTTP.start(uri.host, uri.port,
+      :use_ssl => uri.scheme = 'https',
+      :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
+
+      request = Net::HTTP::Put.new(uri.request_uri, {'Content-Type' => 'application/json', 'Content-Length' => data.length.to_s, 'User-Agent' => 'bcx-project-photocopier (ryan.baumann@gmail.com)'})
+      request.basic_auth $config['to_user'], $config['to_pass']
+      request.body = data
+
+      response = http.request request # Net::HTTPResponse object
+      sleep(0.02) # 500 req/10s
+
+      $stderr.puts response.inspect
+      return JSON.parse(response.body)
+    end
+  end
+end
+
 def create_attachment(account, project, data, content_type, content_length)
   uri = URI(api_url(account, "projects/#{project}/attachments"))
 
@@ -126,7 +152,7 @@ PP.pp topics
 
 # copy messages
 message_topics = topics.select{ |t| t["topicable"]["type"] == "Message" }
-message_topics.each do |message|
+message_topics.reverse_each do |message|
   full_message = basecamp_request($config['from_account'],"projects/#{from_project_id}/messages/#{message["topicable"]["id"]}")
   PP.pp full_message
 
@@ -192,7 +218,7 @@ todo_lists.each do |todo_list|
     copy_comment(comment, to_project_id, "projects/#{to_project_id}/todolists/#{new_todo_list_id}/comments")
   end
 
-  %w{remaining completed}.each do |todo_status|
+  %w{completed remaining}.each do |todo_status|
     todo_list["todos"][todo_status].each do |todo|
       # puts todo["content"]
       todo_full = basecamp_request($config['from_account'],"/projects/#{from_project_id}/todos/#{todo["id"]}")
@@ -201,7 +227,6 @@ todo_lists.each do |todo_list|
       new_todo_hash = {
         "content" => todo_full["content"],
         "due_at" => todo_full["due_at"],
-        "completed" => todo_full["completed"]
       }
       new_todo = authenticated_post($config['to_account'], "projects/#{to_project_id}/todolists/#{new_todo_list_id}/todos", new_todo_hash.to_json)
       PP.pp new_todo
@@ -211,13 +236,17 @@ todo_lists.each do |todo_list|
       todo_full["comments"].each do |comment|
         copy_comment(comment, to_project_id, "projects/#{to_project_id}/todos/#{new_todo_id}/comments")
       end
+
+      if todo_full["completed"]
+        complete_todo($config['to_account'], to_project_id, new_todo_id)
+      end
     end
   end
 end
 
 # copy documents
 documents = basecamp_request($config['from_account'],"projects/#{from_project_id}/documents")
-documents.each do |document|
+documents.reverse_each do |document|
   document = basecamp_request($config['from_account'],"projects/#{from_project_id}/documents/#{document["id"]}")
   PP.pp document
 
@@ -234,7 +263,7 @@ uploads = attachments.select{ |a| a["attachable"]["type"] == "Upload" }
 $stderr.puts attachments.length
 $stderr.puts uploads.length
 
-uploads.each do |upload|
+uploads.reverse_each do |upload|
   attachment = copy_attachment(upload, to_project_id)
   PP.pp attachment
 
