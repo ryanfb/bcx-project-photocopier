@@ -7,7 +7,7 @@ require 'yaml'
 require 'pp'
 
 $config = YAML.load_file('.secrets.yml')
-$dry_run = false
+$dry_run = $config['dry_run']
 
 def api_url(account, path, params = '')
   return "https://basecamp.com/#{account}/api/v1/#{path}.json#{params}"

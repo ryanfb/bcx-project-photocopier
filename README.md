@@ -2,9 +2,13 @@ Copy Basecamp projects from one account to another.
 
 ![Photocopier](https://help.github.com/assets/help/fork-a-repo-e50d51c694939c58b2f83c58fc679c4e.gif)
 
-.secrets.yml:
+Usage:
+------
+    
+Put the following in `.secrets.yml`:
 ```
 ---
+dry_run: true # set to false to actually copy data to target project
 from_account: 123456
 from_user: bob
 from_pass: str0ng
@@ -13,15 +17,53 @@ to_user: corporatebob
 to_pass: r3ally!str0ng
 ```
 
-Not yet implemented:
+Then:
 
- * copying events
- * copying stars
- * copying file labels (not even in the API?)
- * preserving original authorship (would require user/pass for everyone)
+    ./bcx-project-photocopier.rb from_project_id to_project_id
+
+Not yet implemented (feel free to pull req):
+
+ * preserving original authorship (would require user/pass for everyone?)
  * copying accesses/subscriptions
+ * copying events
+ * copying file labels (not even in the API?)
+ * copying stars
+
+Why?
+
+> We don't have a way to move projects from one account into another. I'm sorry, I know that's frustrating. There's actually a good reason behind it though. It means people can't 'steal' projects, and lock them away in another account on you. 
+> 
+> The account owner can make an export of those projects, though, using the link on the Account page. This isn't importable, but it can make it easier to manually add the data to the new account.
+
+I'm still not quite sure I understand the reasoning behind not allowing it, I'll admit.
+
+LICENSE
+-------
+Copyright (c) 2014, Ryan Baumann
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer. 
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Notes:
+------
 ```
 from account
 to account
