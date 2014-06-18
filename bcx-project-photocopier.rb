@@ -221,7 +221,7 @@ todo_lists.each do |todo_list|
   %w{completed remaining}.each do |todo_status|
     todo_list["todos"][todo_status].each do |todo|
       # puts todo["content"]
-      todo_full = basecamp_request($config['from_account'],"/projects/#{from_project_id}/todos/#{todo["id"]}")
+      todo_full = basecamp_request($config['from_account'],"projects/#{from_project_id}/todos/#{todo["id"]}")
       PP.pp todo_full
 
       new_todo_hash = {
