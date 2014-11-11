@@ -1,6 +1,6 @@
 Copy Basecamp projects from one account to another.
 
-![Photocopier](https://help.github.com/assets/help/fork-a-repo-e50d51c694939c58b2f83c58fc679c4e.gif)
+![Photocopier](http://i.imgur.com/IU83VUn.gif)
 
 Usage:
 ------
