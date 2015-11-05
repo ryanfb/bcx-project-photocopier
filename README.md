@@ -1,4 +1,4 @@
-Copy Basecamp projects from one account to another.
+Copy Basecamp 2 (aka BCX) projects from one account to another.
 
 ![Photocopier](http://i.imgur.com/IU83VUn.gif)
 
